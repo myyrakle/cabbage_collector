@@ -1,9 +1,10 @@
+use std::{cell::RefCell, rc::Weak};
+
 #[derive(Debug, Clone)]
 pub struct RawCabbage {
     pub(crate) marked: bool,
-    pub(crate) size: usize,
     pub(crate) data_ptr: usize,
-    pub(crate) child_objects: Vec<*mut RawCabbage>,
+    pub(crate) child_objects: Vec<Weak<RefCell<RawCabbage>>>,
 }
 
 unsafe impl Send for RawCabbage {}
@@ -15,7 +16,6 @@ impl RawCabbage {
 
         RawCabbage {
             marked: false,
-            size: std::mem::size_of::<T>(),
             data_ptr: ptr as usize,
             child_objects: Vec::new(),
         }

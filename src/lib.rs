@@ -1,4 +1,4 @@
-use std::sync::{LazyLock, Mutex};
+use std::{cell::RefCell, rc::Rc, sync::LazyLock};
 
 use raw::RawCabbage;
 
@@ -8,35 +8,43 @@ mod raw;
 pub use cabbage_box::CabbageBox;
 
 pub struct CabbageCollector {
-    roots: Mutex<Vec<RawCabbage>>,
-    all_objects: Mutex<Vec<RawCabbage>>,
+    pub roots: RefCell<Vec<Rc<RefCell<RawCabbage>>>>,
+    pub all_objects: RefCell<Vec<Rc<RefCell<RawCabbage>>>>,
 }
+
+unsafe impl Send for CabbageCollector {}
+unsafe impl Sync for CabbageCollector {}
 
 impl CabbageCollector {
     pub fn new_collector() -> Self {
         CabbageCollector {
-            roots: Mutex::new(Vec::new()),
-            all_objects: Mutex::new(Vec::new()),
+            roots: RefCell::new(Vec::new()),
+            all_objects: RefCell::new(Vec::new()),
         }
     }
 
-    pub fn allocate_to_roots<T>(&self, value: T) -> RawCabbage {
+    pub fn allocate_to_roots<T>(&self, value: T) -> Rc<RefCell<RawCabbage>> {
         let raw_cabbage = RawCabbage::allocate(value);
 
-        self.roots.lock().unwrap().push(raw_cabbage.clone());
-        self.all_objects.lock().unwrap().push(raw_cabbage.clone());
+        let raw_cabbage = Rc::new(RefCell::new(raw_cabbage));
+
+        self.roots.borrow_mut().push(raw_cabbage.clone());
+        self.all_objects.borrow_mut().push(raw_cabbage.clone());
 
         raw_cabbage
     }
 
-    pub fn allocate_under_parent(&self, parent: &mut RawCabbage, value: RawCabbage) -> RawCabbage {
+    pub fn allocate_under_parent(
+        &mut self,
+        parent: &mut RawCabbage,
+        value: RawCabbage,
+    ) -> Rc<RefCell<RawCabbage>> {
         let raw_cabbage = RawCabbage::allocate(value);
+        let raw_cabbage = Rc::new(RefCell::new(raw_cabbage));
 
-        parent
-            .child_objects
-            .push(raw_cabbage.data_ptr as *mut RawCabbage);
+        parent.child_objects.push(Rc::downgrade(&raw_cabbage));
 
-        self.all_objects.lock().unwrap().push(raw_cabbage.clone());
+        self.all_objects.borrow_mut().push(raw_cabbage.clone());
 
         raw_cabbage
     }
@@ -53,22 +61,21 @@ impl CabbageCollector {
     }
 
     fn reset_mark(&self) {
-        let mut all_objects = self.all_objects.lock().unwrap();
-
-        for obj in all_objects.iter_mut() {
-            obj.marked = false;
+        for obj in self.all_objects.borrow_mut().iter() {
+            obj.borrow_mut().marked = false;
         }
     }
 
     fn mark(&self) {
-        let mut roots = self.roots.lock().unwrap();
+        for root in self.roots.borrow_mut().iter() {
+            let mut borrowed = root.borrow_mut();
+            borrowed.marked = true;
 
-        for root in roots.iter_mut() {
-            self.mark_recursion(root);
+            Self::mark_recursion(borrowed.get_data_mut());
         }
     }
 
-    fn mark_recursion(&self, obj: &mut RawCabbage) {
+    fn mark_recursion(obj: &mut RawCabbage) {
         if obj.marked {
             return;
         }
@@ -76,29 +83,35 @@ impl CabbageCollector {
         obj.marked = true;
 
         for child in obj.child_objects.iter_mut() {
-            let child = unsafe { &mut **child };
+            let child = match child.upgrade() {
+                Some(child) => child,
+                None => {
+                    continue;
+                }
+            };
 
-            self.mark_recursion(child);
+            let mut borrowed = child.borrow_mut();
+            Self::mark_recursion(borrowed.get_data_mut());
         }
     }
 
     fn sweep(&self) {
-        let mut all_objects = self.all_objects.lock().unwrap();
-        let mut roots = self.roots.lock().unwrap();
-
-        all_objects.retain(|obj| {
-            if obj.marked {
+        self.all_objects.borrow_mut().retain(|obj| {
+            if obj.borrow().marked {
                 true
             } else {
-                let obj = unsafe { &mut *(obj.data_ptr as *mut RawCabbage) };
+                let obj = unsafe { &mut *(obj.borrow().data_ptr as *mut RawCabbage) };
                 obj.deallocate();
                 false
             }
         });
+    }
 
-        roots.retain(|obj| if obj.marked { true } else { false });
+    #[allow(dead_code)]
+    fn print_for_debug(&self) {
+        println!("roots: {:?}", self.roots.borrow());
+        println!("all_objects: {:?}", self.all_objects.borrow());
     }
 }
 
-pub static COLLECTOR: LazyLock<CabbageCollector> =
-    LazyLock::new(|| CabbageCollector::new_collector());
+pub static COLLECTOR: LazyLock<CabbageCollector> = LazyLock::new(CabbageCollector::new_collector);
