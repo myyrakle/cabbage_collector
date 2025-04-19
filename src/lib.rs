@@ -64,11 +64,11 @@ impl CabbageCollector {
         let mut roots = self.roots.lock().unwrap();
 
         for root in roots.iter_mut() {
-            self.mark_recursion(root);
+            Self::mark_recursion(root);
         }
     }
 
-    fn mark_recursion(&self, obj: &mut RawCabbage) {
+    fn mark_recursion(obj: &mut RawCabbage) {
         if obj.marked {
             return;
         }
@@ -78,7 +78,7 @@ impl CabbageCollector {
         for child in obj.child_objects.iter_mut() {
             let child = unsafe { &mut **child };
 
-            self.mark_recursion(child);
+            Self::mark_recursion(child);
         }
     }
 
@@ -96,9 +96,8 @@ impl CabbageCollector {
             }
         });
 
-        roots.retain(|obj| if obj.marked { true } else { false });
+        roots.retain(|obj| obj.marked);
     }
 }
 
-pub static COLLECTOR: LazyLock<CabbageCollector> =
-    LazyLock::new(|| CabbageCollector::new_collector());
+pub static COLLECTOR: LazyLock<CabbageCollector> = LazyLock::new(CabbageCollector::new_collector);
