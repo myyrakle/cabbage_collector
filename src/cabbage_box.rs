@@ -12,7 +12,7 @@ impl<T> CabbageBox<T> {
     pub fn new(value: T) -> Self {
         let raw_cabbage = RawCabbage::allocate(value);
 
-        // TODO: Collector에 등록
+        COLLECTOR.allocate_to_roots(raw_cabbage.clone());
 
         CabbageBox {
             raw_cabbage,

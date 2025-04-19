@@ -6,6 +6,8 @@ pub struct RawCabbage {
     pub child_objects: Vec<*mut RawCabbage>,
 }
 
+unsafe impl Send for RawCabbage {}
+
 impl RawCabbage {
     pub fn allocate<T>(value: T) -> Self {
         let boxed_obj = Box::new(value);
