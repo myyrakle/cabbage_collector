@@ -44,12 +44,40 @@ impl CabbageCollector {
     pub fn run_cabbage_collection(&self) {
         // STEP 1. 모든 객체에 Mark=false 초기화
         self.reset_mark();
+
+        // STEP 2. Mark Phase
+        self.mark();
+
+        // STEP 3. Sweep Phase
     }
 
     fn reset_mark(&self) {
         let mut all_objects = self.all_objects.lock().unwrap();
+
         for obj in all_objects.iter_mut() {
             obj.marked = false;
+        }
+    }
+
+    pub fn mark(&self) {
+        let mut roots = self.roots.lock().unwrap();
+
+        for root in roots.iter_mut() {
+            self.mark_recursion(root);
+        }
+    }
+
+    fn mark_recursion(&self, obj: &mut RawCabbage) {
+        if obj.marked {
+            return;
+        }
+
+        obj.marked = true;
+
+        for child in obj.child_objects.iter_mut() {
+            let child = unsafe { &mut **child };
+
+            self.mark_recursion(child);
         }
     }
 }
