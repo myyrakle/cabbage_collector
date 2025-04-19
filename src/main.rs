@@ -1,7 +1,11 @@
-use cabbage_collector::CabbageBox;
+use cabbage_collector::{COLLECTOR, CabbageBox};
 
 fn main() {
-    let obj = CabbageBox::new(42);
+    {
+        let obj = CabbageBox::new(42);
 
-    println!("{:?}", obj);
+        COLLECTOR.run_cabbage_collection();
+
+        println!("{:?}", obj);
+    }
 }

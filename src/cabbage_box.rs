@@ -7,6 +7,7 @@ use crate::{COLLECTOR, raw::RawCabbage};
 pub struct CabbageBox<T> {
     pub(crate) raw_cabbage: RawCabbage,
     pub(crate) _type: std::marker::PhantomData<T>,
+    pub(crate) is_root: bool,
 }
 
 impl<T> CabbageBox<T> {
@@ -18,6 +19,7 @@ impl<T> CabbageBox<T> {
         CabbageBox {
             raw_cabbage,
             _type: std::marker::PhantomData,
+            is_root: true,
         }
     }
 
@@ -32,7 +34,15 @@ impl<T> CabbageBox<T> {
 
 impl<T> Drop for CabbageBox<T> {
     fn drop(&mut self) {
-        // roots 객체에서 제거
+        // roots 객체 목록에서 제거
+        if self.is_root {
+            println!("root에서 제거");
+
+            COLLECTOR
+                .roots
+                .borrow_mut()
+                .retain(|obj| obj.borrow().data_ptr != self.raw_cabbage.data_ptr);
+        }
     }
 }
 
