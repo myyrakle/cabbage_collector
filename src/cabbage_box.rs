@@ -5,8 +5,8 @@ use crate::{COLLECTOR, raw::RawCabbage};
 
 #[derive(Clone)]
 pub struct CabbageBox<T> {
-    raw_cabbage: RawCabbage,
-    _type: std::marker::PhantomData<T>,
+    pub(crate) raw_cabbage: RawCabbage,
+    pub(crate) _type: std::marker::PhantomData<T>,
 }
 
 impl<T> CabbageBox<T> {
