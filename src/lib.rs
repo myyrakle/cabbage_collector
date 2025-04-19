@@ -40,6 +40,18 @@ impl CabbageCollector {
 
         raw_cabbage
     }
+
+    pub fn run_cabbage_collection(&self) {
+        // STEP 1. 모든 객체에 Mark=false 초기화
+        self.reset_mark();
+    }
+
+    fn reset_mark(&self) {
+        let mut all_objects = self.all_objects.lock().unwrap();
+        for obj in all_objects.iter_mut() {
+            obj.marked = false;
+        }
+    }
 }
 
 pub static COLLECTOR: LazyLock<CabbageCollector> =
