@@ -49,6 +49,7 @@ impl CabbageCollector {
         self.mark();
 
         // STEP 3. Sweep Phase
+        self.sweep();
     }
 
     fn reset_mark(&self) {
@@ -59,7 +60,7 @@ impl CabbageCollector {
         }
     }
 
-    pub fn mark(&self) {
+    fn mark(&self) {
         let mut roots = self.roots.lock().unwrap();
 
         for root in roots.iter_mut() {
@@ -79,6 +80,23 @@ impl CabbageCollector {
 
             self.mark_recursion(child);
         }
+    }
+
+    fn sweep(&self) {
+        let mut all_objects = self.all_objects.lock().unwrap();
+        let mut roots = self.roots.lock().unwrap();
+
+        all_objects.retain(|obj| {
+            if obj.marked {
+                true
+            } else {
+                let obj = unsafe { &mut *(obj.data_ptr as *mut RawCabbage) };
+                obj.deallocate();
+                false
+            }
+        });
+
+        roots.retain(|obj| if obj.marked { true } else { false });
     }
 }
 
