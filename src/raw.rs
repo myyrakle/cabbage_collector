@@ -1,9 +1,9 @@
 #[derive(Debug, Clone)]
 pub struct RawCabbage {
-    pub marked: bool,
-    pub size: usize,
-    pub data_ptr: usize,
-    pub child_objects: Vec<*mut RawCabbage>,
+    pub(crate) marked: bool,
+    pub(crate) size: usize,
+    pub(crate) data_ptr: usize,
+    pub(crate) child_objects: Vec<*mut RawCabbage>,
 }
 
 unsafe impl Send for RawCabbage {}
@@ -18,6 +18,12 @@ impl RawCabbage {
             size: std::mem::size_of::<T>(),
             data_ptr: ptr as usize,
             child_objects: Vec::new(),
+        }
+    }
+
+    pub fn deallocate(&mut self) {
+        unsafe {
+            let _ = Box::from_raw(self.data_ptr as *mut u8);
         }
     }
 

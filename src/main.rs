@@ -1,9 +1,7 @@
-use cabbage_collector::{CabbageBox, CabbageCollector};
+use cabbage_collector::CabbageBox;
 
 fn main() {
-    let mut collector = CabbageCollector::new_collector();
-
-    let mut obj = CabbageBox::new(42);
+    let obj = CabbageBox::new(42);
 
     println!("{:?}", obj);
 }
