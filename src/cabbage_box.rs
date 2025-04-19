@@ -30,6 +30,12 @@ impl<T> CabbageBox<T> {
     }
 }
 
+impl<T> Drop for CabbageBox<T> {
+    fn drop(&mut self) {
+        // roots 객체에서 제거
+    }
+}
+
 impl<T: std::fmt::Debug> std::fmt::Debug for CabbageBox<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fmt::Debug::fmt(self.get_data_ref(), f)
