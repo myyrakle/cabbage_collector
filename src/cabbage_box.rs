@@ -1,9 +1,15 @@
 use core::fmt;
-use std::ops::{Deref, DerefMut};
+use std::{
+    cell::RefCell,
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 
 use crate::{COLLECTOR, raw::RawCabbage};
 
-#[derive(Clone)]
+/// Object Wrapper managed by the Cabbage Collector
+/// This can share same object
+
 pub struct CabbageBox<T> {
     pub(crate) raw_cabbage: RawCabbage,
     pub(crate) _type: std::marker::PhantomData<T>,
@@ -14,12 +20,25 @@ impl<T> CabbageBox<T> {
     pub fn new(value: T) -> Self {
         let raw_cabbage = RawCabbage::allocate(value);
 
-        COLLECTOR.allocate_to_roots(raw_cabbage.clone());
+        {
+            let raw_cabbage = Rc::new(RefCell::new(raw_cabbage.clone()));
+
+            COLLECTOR.roots.borrow_mut().push(raw_cabbage.clone());
+            COLLECTOR.all_objects.borrow_mut().push(raw_cabbage.clone());
+        }
 
         CabbageBox {
             raw_cabbage,
             _type: std::marker::PhantomData,
             is_root: true,
+        }
+    }
+
+    pub fn non_root(&self) -> CabbageBox<T> {
+        CabbageBox {
+            raw_cabbage: self.raw_cabbage.clone(),
+            _type: std::marker::PhantomData,
+            is_root: false,
         }
     }
 
@@ -32,16 +51,39 @@ impl<T> CabbageBox<T> {
     }
 }
 
+impl<T> Clone for CabbageBox<T> {
+    fn clone(&self) -> Self {
+        let raw_cabbage = Rc::new(RefCell::new(self.raw_cabbage.clone()));
+
+        COLLECTOR.roots.borrow_mut().push(raw_cabbage);
+
+        CabbageBox {
+            raw_cabbage: self.raw_cabbage.clone(),
+            _type: std::marker::PhantomData,
+            is_root: self.is_root,
+        }
+    }
+}
+
 impl<T> Drop for CabbageBox<T> {
     fn drop(&mut self) {
         // roots 객체 목록에서 제거
         if self.is_root {
-            println!("root에서 제거");
+            let mut roots = COLLECTOR.roots.borrow_mut();
 
-            COLLECTOR
-                .roots
-                .borrow_mut()
-                .retain(|obj| obj.borrow().data_ptr != self.raw_cabbage.data_ptr);
+            // 포인터 값이 일치하는 것 하나만 제거
+            let mut index = -1;
+
+            for (i, obj) in roots.iter().enumerate() {
+                if obj.borrow().data_ptr == self.raw_cabbage.data_ptr {
+                    index = i as isize;
+                    break;
+                }
+            }
+
+            if index >= 0 {
+                roots.remove(index as usize);
+            }
         }
     }
 }

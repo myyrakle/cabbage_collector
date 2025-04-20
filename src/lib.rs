@@ -23,32 +23,6 @@ impl CabbageCollector {
         }
     }
 
-    pub fn allocate_to_roots<T>(&self, value: T) -> Rc<RefCell<RawCabbage>> {
-        let raw_cabbage = RawCabbage::allocate(value);
-
-        let raw_cabbage = Rc::new(RefCell::new(raw_cabbage));
-
-        self.roots.borrow_mut().push(raw_cabbage.clone());
-        self.all_objects.borrow_mut().push(raw_cabbage.clone());
-
-        raw_cabbage
-    }
-
-    pub fn allocate_under_parent(
-        &mut self,
-        parent: &mut RawCabbage,
-        value: RawCabbage,
-    ) -> Rc<RefCell<RawCabbage>> {
-        let raw_cabbage = RawCabbage::allocate(value);
-        let raw_cabbage = Rc::new(RefCell::new(raw_cabbage));
-
-        parent.child_objects.push(Rc::downgrade(&raw_cabbage));
-
-        self.all_objects.borrow_mut().push(raw_cabbage.clone());
-
-        raw_cabbage
-    }
-
     pub fn run_cabbage_collection(&self) {
         // STEP 1. 모든 객체에 Mark=false 초기화
         self.reset_mark();
@@ -108,7 +82,7 @@ impl CabbageCollector {
     }
 
     #[allow(dead_code)]
-    fn print_for_debug(&self) {
+    pub fn print_for_debug(&self) {
         println!("roots: {:?}", self.roots.borrow());
         println!("all_objects: {:?}", self.all_objects.borrow());
     }

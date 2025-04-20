@@ -23,7 +23,9 @@ impl RawCabbage {
 
     pub fn deallocate(&mut self) {
         unsafe {
-            let _ = Box::from_raw(self.data_ptr as *mut u8);
+            let _raw_object = Box::from_raw(self.data_ptr as *mut u8);
+
+            // TODO: call Drop function (Drop trait)
         }
     }
 
