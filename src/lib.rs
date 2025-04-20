@@ -74,6 +74,13 @@ impl CabbageCollector {
             if obj.borrow().marked {
                 true
             } else {
+                COLLECTOR.roots.borrow_mut().retain(|root| {
+                    let root_ptr = root.borrow().data_ptr;
+                    let obj_ptr = obj.borrow().data_ptr;
+
+                    root_ptr != obj_ptr
+                });
+
                 obj.borrow_mut().deallocate();
                 false
             }
