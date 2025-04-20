@@ -42,6 +42,69 @@ fn step2() {
 
         let cloned_obj = child_obj.clone();
         println!("{:?}", cloned_obj);
+
+        COLLECTOR.print_for_debug();
+    }
+    println!("Before GC");
+    COLLECTOR.print_for_debug();
+    COLLECTOR.run_cabbage_collection();
+    println!("After GC");
+    COLLECTOR.print_for_debug();
+}
+
+fn step3() {
+    println!("----------------");
+    println!("---- STEP 3 ----");
+
+    {
+        #[derive(Debug, Clone)]
+        struct Child {
+            pub value: i32,
+        }
+
+        #[derive(Debug, Clone)]
+        struct Parent {
+            pub child: CabbageBox<Child>,
+        }
+
+        let child_obj = CabbageBox::new(Child { value: 1 });
+
+        let parent_obj = CabbageBox::new(Parent {
+            child: CabbageBox::non_root(&child_obj),
+        });
+
+        COLLECTOR.print_for_debug();
+    }
+    println!("Before GC");
+    COLLECTOR.print_for_debug();
+    COLLECTOR.run_cabbage_collection();
+    println!("After GC");
+    COLLECTOR.print_for_debug();
+}
+
+// circular reference
+fn step4() {
+    println!("----------------");
+    println!("---- STEP 4 ----");
+
+    {
+        #[derive(Debug, Clone)]
+        struct A {
+            pub value: Option<CabbageBox<B>>,
+        }
+
+        #[derive(Debug, Clone)]
+        struct B {
+            pub value: Option<CabbageBox<A>>,
+        }
+
+        let mut a_obj = CabbageBox::new(A { value: None });
+        let mut b_obj = CabbageBox::new(B { value: None });
+
+        a_obj.value = Some(b_obj.clone());
+        b_obj.value = Some(a_obj.clone());
+
+        COLLECTOR.print_for_debug();
     }
     println!("Before GC");
     COLLECTOR.print_for_debug();
@@ -51,17 +114,11 @@ fn step2() {
 }
 
 fn main() {
-    step1();
+    // step1();
 
     // step2();
 
-    // {
-    //     let mut parent_obj = CabbageBox::new(SampleChild {
-    //         value: CabbageBox::non_root(&CabbageBox::new(1)),
-    //     });
+    // step3();
 
-    //     println!("parent_obj: {:?}", parent_obj);
-
-    //     COLLECTOR.run_cabbage_collection();
-    // }
+    step4();
 }
