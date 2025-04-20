@@ -46,8 +46,9 @@ The circular reference issue has been resolved.
 
 ## Checklist
 
-- Circular Reference [x]
-- Automatically identifies root and non-root [ ]
-- Concurrent GC [ ]
-- Generational GC [ ]
-- Memory Compaction [ ]
+- [x] Circular Reference
+- [ ] Automatically identifies root and non-root
+- [ ] Auth trigger GC
+- [ ] Concurrent GC
+- [ ] Generational GC
+- [ ] Memory Compaction
