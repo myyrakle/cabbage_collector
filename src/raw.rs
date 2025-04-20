@@ -4,6 +4,7 @@ use std::{cell::RefCell, rc::Weak};
 pub struct RawCabbage {
     pub(crate) marked: bool,
     pub(crate) data_ptr: usize,
+    pub(crate) layout: std::alloc::Layout,
     pub(crate) child_objects: Vec<Weak<RefCell<RawCabbage>>>,
 }
 
@@ -12,18 +13,20 @@ unsafe impl Send for RawCabbage {}
 impl RawCabbage {
     pub fn allocate<T>(value: T) -> Self {
         let boxed_obj = Box::new(value);
-        let ptr = Box::into_raw(boxed_obj);
+        let ptr = Box::into_raw(boxed_obj) as usize;
+        let layout = std::alloc::Layout::new::<T>();
 
         RawCabbage {
             marked: false,
-            data_ptr: ptr as usize,
+            layout,
+            data_ptr: ptr,
             child_objects: Vec::new(),
         }
     }
 
     pub fn deallocate(&mut self) {
         unsafe {
-            let _raw_object = Box::from_raw(self.data_ptr as *mut u8);
+            std::alloc::dealloc(self.data_ptr as *mut u8, self.layout);
 
             // TODO: call Drop function (Drop trait)
         }

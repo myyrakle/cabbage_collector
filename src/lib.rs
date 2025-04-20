@@ -74,8 +74,7 @@ impl CabbageCollector {
             if obj.borrow().marked {
                 true
             } else {
-                let obj = unsafe { &mut *(obj.borrow().data_ptr as *mut RawCabbage) };
-                obj.deallocate();
+                obj.borrow_mut().deallocate();
                 false
             }
         });

@@ -51,9 +51,9 @@ fn step2() {
 }
 
 fn main() {
-    // step1();
+    step1();
 
-    step2();
+    // step2();
 
     // {
     //     let mut parent_obj = CabbageBox::new(SampleChild {
