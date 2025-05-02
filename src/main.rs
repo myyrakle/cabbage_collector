@@ -17,7 +17,7 @@ fn step1() {
             pub value: i32,
         }
 
-        let child_obj = CabbageBox::new(A { value: 1 });
+        let child_obj = CabbageBox::new_root(A { value: 1 });
         println!("{:?}", child_obj);
     }
     println!("Before GC");
@@ -37,7 +37,7 @@ fn step2() {
             pub value: i32,
         }
 
-        let child_obj = CabbageBox::new(A { value: 1 });
+        let child_obj = CabbageBox::new_root(A { value: 1 });
         println!("{:?}", child_obj);
 
         let cloned_obj = child_obj.clone();
@@ -67,9 +67,9 @@ fn step3() {
             pub child: CabbageBox<Child>,
         }
 
-        let child_obj = CabbageBox::new(Child { value: 1 });
+        let child_obj = CabbageBox::new_root(Child { value: 1 });
 
-        let parent_obj = CabbageBox::new(Parent {
+        let parent_obj = CabbageBox::new_root(Parent {
             child: CabbageBox::non_root(&child_obj),
         });
 
@@ -98,8 +98,8 @@ fn step4() {
             pub value: Option<CabbageBox<A>>,
         }
 
-        let mut a_obj = CabbageBox::new(A { value: None });
-        let mut b_obj = CabbageBox::new(B { value: None });
+        let mut a_obj = CabbageBox::new_root(A { value: None });
+        let mut b_obj = CabbageBox::new_root(B { value: None });
 
         a_obj.value = Some(b_obj.clone());
         b_obj.value = Some(a_obj.clone());

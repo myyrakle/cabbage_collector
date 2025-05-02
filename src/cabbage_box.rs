@@ -17,7 +17,7 @@ pub struct CabbageBox<T> {
 }
 
 impl<T> CabbageBox<T> {
-    pub fn new(value: T) -> Self {
+    pub fn new_root(value: T) -> Self {
         let raw_cabbage = RawCabbage::allocate(value);
 
         {
