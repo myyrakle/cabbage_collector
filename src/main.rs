@@ -67,11 +67,12 @@ fn step3() {
             pub child: CabbageBox<Child>,
         }
 
-        let child_obj = CabbageBox::new_root(Child { value: 1 });
+        let child_obj = CabbageBox::new_non_root(Child { value: 1 });
 
-        let parent_obj = CabbageBox::new_root(Parent {
-            child: CabbageBox::non_root(&child_obj),
+        let mut parent_obj = CabbageBox::new_root(Parent {
+            child: child_obj.clone(),
         });
+        parent_obj.adopt_child(child_obj);
 
         COLLECTOR.print_for_debug();
     }
@@ -118,7 +119,7 @@ fn main() {
 
     // step2();
 
-    // step3();
+    step3();
 
-    step4();
+    // step4();
 }
