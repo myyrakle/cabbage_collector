@@ -17,7 +17,7 @@ pub struct CabbageBox<T> {
 }
 
 impl<T> CabbageBox<T> {
-    pub fn new(value: T) -> Self {
+    pub fn new_root(value: T) -> Self {
         let raw_cabbage = RawCabbage::allocate(value);
 
         {
@@ -34,12 +34,28 @@ impl<T> CabbageBox<T> {
         }
     }
 
-    pub fn non_root(&self) -> CabbageBox<T> {
+    pub fn new_non_root(value: T) -> CabbageBox<T> {
+        let raw_cabbage = RawCabbage::allocate(value);
+
+        {
+            let raw_cabbage = Rc::new(RefCell::new(raw_cabbage.clone()));
+
+            COLLECTOR.all_objects.borrow_mut().push(raw_cabbage.clone());
+        }
+
         CabbageBox {
-            raw_cabbage: self.raw_cabbage.clone(),
+            raw_cabbage,
             _type: std::marker::PhantomData,
             is_root: false,
         }
+    }
+
+    pub fn adopt_child<U>(&mut self, child: CabbageBox<U>) {
+        let raw_cabbage = Rc::new(RefCell::new(child.raw_cabbage.clone()));
+
+        self.raw_cabbage
+            .child_objects
+            .push(Rc::downgrade(&raw_cabbage));
     }
 
     fn get_data_ref(&self) -> &T {
