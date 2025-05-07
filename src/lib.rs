@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, sync::LazyLock};
+use std::{cell::RefCell, sync::LazyLock};
 
 use raw::RawCabbage;
 
@@ -8,8 +8,8 @@ mod raw;
 pub use cabbage_box::CabbageBox;
 
 pub struct CabbageCollector {
-    pub roots: RefCell<Vec<Rc<RefCell<RawCabbage>>>>,
-    pub all_objects: RefCell<Vec<Rc<RefCell<RawCabbage>>>>,
+    pub roots: RefCell<Vec<*mut RawCabbage>>,
+    pub all_objects: RefCell<Vec<*mut RawCabbage>>,
 }
 
 unsafe impl Send for CabbageCollector {}
@@ -36,16 +36,19 @@ impl CabbageCollector {
 
     fn reset_mark(&self) {
         for obj in self.all_objects.borrow_mut().iter() {
-            obj.borrow_mut().marked = false;
+            unsafe {
+                (**obj).marked = false;
+            }
         }
     }
 
     fn mark(&self) {
-        for root in self.roots.borrow_mut().iter() {
-            let mut borrowed = root.borrow_mut();
-            borrowed.marked = true;
+        for root in self.roots.borrow_mut().iter().cloned() {
+            unsafe {
+                (*root).marked = true;
 
-            Self::mark_recursion(borrowed.get_data_mut());
+                Self::mark_recursion((*root).get_data_mut());
+            }
         }
     }
 
@@ -57,31 +60,25 @@ impl CabbageCollector {
         obj.marked = true;
 
         for child in obj.child_objects.iter_mut() {
-            let child = match child.upgrade() {
-                Some(child) => child,
-                None => {
-                    continue;
-                }
-            };
-
-            let mut borrowed = child.borrow_mut();
-            Self::mark_recursion(borrowed.get_data_mut());
+            unsafe {
+                Self::mark_recursion((**child).get_data_mut());
+            }
         }
     }
 
     fn sweep(&self) {
-        self.all_objects.borrow_mut().retain(|obj| {
-            if obj.borrow().marked {
+        self.all_objects.borrow_mut().retain(|obj| unsafe {
+            if (**obj).marked {
                 true
             } else {
                 COLLECTOR.roots.borrow_mut().retain(|root| {
-                    let root_ptr = root.borrow().data_ptr;
-                    let obj_ptr = obj.borrow().data_ptr;
+                    let root_ptr = (**root).data_ptr;
+                    let obj_ptr = (**obj).data_ptr;
 
                     root_ptr != obj_ptr
                 });
 
-                obj.borrow_mut().deallocate();
+                (**obj).deallocate();
                 false
             }
         });
