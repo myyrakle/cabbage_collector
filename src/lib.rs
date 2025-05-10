@@ -47,8 +47,6 @@ impl CabbageCollector {
             unsafe {
                 (*root).marked = true;
 
-                println!("!! child: {:?}", (*root).child_objects);
-
                 Self::mark_recursion(root);
             }
         }
