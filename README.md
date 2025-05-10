@@ -39,7 +39,10 @@ The circular reference issue has been resolved.
         let mut b_obj = CabbageBox::new(B { value: None });
 
         a_obj.value = Some(b_obj.clone());
+        a_obj.adopt_child(b_obj.clone());
+
         b_obj.value = Some(a_obj.clone());
+        b_obj.adopt_child(a_obj.clone());
     }
     COLLECTOR.run_cabbage_collection();
 ```
@@ -48,7 +51,7 @@ The circular reference issue has been resolved.
 
 - [x] Circular Reference
 - [ ] Automatically identifies root and non-root
-- [ ] Auth trigger GC
+- [ ] Auto trigger GC
 - [ ] Concurrent GC
 - [ ] Generational GC
 - [ ] Memory Compaction

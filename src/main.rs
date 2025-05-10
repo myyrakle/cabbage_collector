@@ -103,7 +103,10 @@ fn step4() {
         let mut b_obj = CabbageBox::new_root(B { value: None });
 
         a_obj.value = Some(b_obj.clone());
+        a_obj.adopt_child(b_obj.clone());
+
         b_obj.value = Some(a_obj.clone());
+        b_obj.adopt_child(a_obj.clone());
 
         COLLECTOR.print_for_debug();
     }
