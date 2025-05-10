@@ -3,8 +3,8 @@ pub struct RawCabbage {
     pub(crate) data_ptr: usize,
     pub(crate) layout: std::alloc::Layout,
     pub(crate) marked: bool,
-    pub(crate) child_objects: Vec<*mut RawCabbage>,
     pub(crate) is_root: bool,
+    pub child_objects: Vec<*mut RawCabbage>,
 }
 
 unsafe impl Send for RawCabbage {}
@@ -26,11 +26,13 @@ impl RawCabbage {
         Box::into_raw(Box::new(raw_cabbage)) as *mut Self
     }
 
-    pub fn deallocate(&mut self) {
+    pub fn deallocate(this: *mut Self) {
         unsafe {
-            std::alloc::dealloc(self.data_ptr as *mut u8, self.layout);
+            std::alloc::dealloc((*this).data_ptr as *mut u8, (*this).layout);
 
             // TODO: call Drop function (Drop trait)
+
+            let _ = Box::from_raw(this);
         }
     }
 
@@ -38,7 +40,11 @@ impl RawCabbage {
         unsafe { &*(self.data_ptr as *const T) }
     }
 
-    pub fn get_data_mut<T>(&mut self) -> &mut T {
+    pub fn get_data_mut_ref<T>(&mut self) -> &mut T {
         unsafe { &mut *(self.data_ptr as *mut T) }
+    }
+
+    pub fn get_data_mut_ptr<T>(&mut self) -> *mut T {
+        self.data_ptr as *mut T
     }
 }

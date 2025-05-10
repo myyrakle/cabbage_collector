@@ -1,6 +1,6 @@
 use std::{cell::RefCell, sync::LazyLock};
 
-use raw::RawCabbage;
+pub use raw::RawCabbage;
 
 mod cabbage_box;
 mod raw;
@@ -47,21 +47,29 @@ impl CabbageCollector {
             unsafe {
                 (*root).marked = true;
 
-                Self::mark_recursion((*root).get_data_mut());
+                println!("!! child: {:?}", (*root).child_objects);
+
+                Self::mark_recursion(root);
             }
         }
     }
 
-    fn mark_recursion(obj: &mut RawCabbage) {
-        if obj.marked {
-            return;
+    fn mark_recursion(obj: *mut RawCabbage) {
+        unsafe {
+            if (*obj).marked {
+                return;
+            }
         }
 
-        obj.marked = true;
+        unsafe {
+            (*obj).marked = true;
+        }
 
-        for child in obj.child_objects.iter_mut() {
-            unsafe {
-                Self::mark_recursion((**child).get_data_mut());
+        // println!("!!! {:?}", obj.child_objects);
+
+        unsafe {
+            for child in (*obj).child_objects.iter().cloned() {
+                Self::mark_recursion(child);
             }
         }
     }
@@ -78,7 +86,7 @@ impl CabbageCollector {
                     root_ptr != obj_ptr
                 });
 
-                (**obj).deallocate();
+                RawCabbage::deallocate(*obj);
                 false
             }
         });

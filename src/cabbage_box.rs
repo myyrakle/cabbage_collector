@@ -7,7 +7,7 @@ use crate::{COLLECTOR, raw::RawCabbage};
 /// This can share same object
 
 pub struct CabbageBox<T> {
-    pub(crate) raw_cabbage: *mut RawCabbage,
+    pub raw_cabbage: *mut RawCabbage,
     pub(crate) _type: std::marker::PhantomData<T>,
 }
 
@@ -52,13 +52,17 @@ impl<T> CabbageBox<T> {
     }
 
     fn get_data_mut(&mut self) -> &mut T {
-        unsafe { (*self.raw_cabbage).get_data_mut() }
+        unsafe { (*self.raw_cabbage).get_data_mut_ref() }
     }
 }
 
 impl<T> Clone for CabbageBox<T> {
     fn clone(&self) -> Self {
-        COLLECTOR.roots.borrow_mut().push(self.raw_cabbage);
+        unsafe {
+            if (*self.raw_cabbage).is_root {
+                COLLECTOR.roots.borrow_mut().push(self.raw_cabbage);
+            }
+        }
 
         CabbageBox {
             raw_cabbage: self.raw_cabbage,
@@ -69,8 +73,8 @@ impl<T> Clone for CabbageBox<T> {
 
 impl<T> Drop for CabbageBox<T> {
     fn drop(&mut self) {
-        // roots 객체 목록에서 제거
         unsafe {
+            // roots 객체 목록에서 제거
             if (*self.raw_cabbage).is_root {
                 let mut roots = COLLECTOR.roots.borrow_mut();
 
