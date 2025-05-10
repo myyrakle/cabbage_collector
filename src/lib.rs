@@ -63,8 +63,6 @@ impl CabbageCollector {
             (*obj).marked = true;
         }
 
-        // println!("!!! {:?}", obj.child_objects);
-
         unsafe {
             for child in (*obj).child_objects.iter().cloned() {
                 Self::mark_recursion(child);
