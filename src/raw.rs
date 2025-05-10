@@ -4,7 +4,7 @@ pub struct RawCabbage {
     pub(crate) layout: std::alloc::Layout,
     pub(crate) marked: bool,
     pub(crate) is_root: bool,
-    pub child_objects: Vec<*mut RawCabbage>,
+    pub(crate) child_objects: Vec<*mut RawCabbage>,
 }
 
 unsafe impl Send for RawCabbage {}

@@ -8,8 +8,8 @@ mod raw;
 pub use cabbage_box::CabbageBox;
 
 pub struct CabbageCollector {
-    pub roots: RefCell<Vec<*mut RawCabbage>>,
-    pub all_objects: RefCell<Vec<*mut RawCabbage>>,
+    pub(crate) roots: RefCell<Vec<*mut RawCabbage>>,
+    pub(crate) all_objects: RefCell<Vec<*mut RawCabbage>>,
 }
 
 unsafe impl Send for CabbageCollector {}
